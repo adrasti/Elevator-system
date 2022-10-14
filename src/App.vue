@@ -3,6 +3,7 @@
   <div class="elevator-content">
     <div class="elevator-container" :style="elevatorContainerStyle">
       <template v-for="floor in floors" :key="floor">
+        <div class="cell-padding"></div>
         <Cell
           v-for="elevator in elevators"
           :key="elevator"
@@ -10,7 +11,9 @@
           :elevator="elevator"
           v-on:callElevator="callElevator"
         ></Cell>
+        <div class="cell-padding"></div>
       </template>
+      <div class="cell-padding"></div>
       <ElevatorCell
         v-for="elevator in elevators"
         :key="elevator"
@@ -20,13 +23,14 @@
         :call="callCommand"
         v-on:callElevator="callElevator"
       ></ElevatorCell>
+      <div class="cell-padding"></div>
     </div>
   </div>
 </template>
 
 <script>
 import { useStore } from "vuex";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import Cell from "./components/cell.vue";
 import ElevatorCell from "./components/ElevatorCell.vue";
 
@@ -47,6 +51,8 @@ export default {
 
     const callCommand = ref(null);
 
+    const id = ref(null);
+
     const elevatorStyle = computed(() => {
       return `width:${elevatorShaftWidth.value * 0.8}px;height:${
         floorHeight.value
@@ -58,20 +64,52 @@ export default {
       let rows = "";
       const shaftWidth = `${elevatorShaftWidth.value}px`;
       const height = `${floorHeight.value}px`;
-      for (let i = 0; i < elevators.value; i++) {
+      for (let i = 0; i < elevators.value + 2; i++) {
         columns = columns + " " + shaftWidth;
       }
       for (let i = 0; i < floors.value + 1; i++) {
         rows = rows + " " + height;
       }
-      console.log(columns);
       return `grid-template-columns:${columns}; grid-template-rows:${rows}`;
     });
 
     const callElevator = (floor) => {
-      callCommand.value = [1, floor];
-    };
+      store.commit("addToQueue", floor);
+      store.commit("addActiveButton", floor);
+      clearInterval(id.value);
 
+      if (store.state.available_elevators_stack.length !== 0) {
+        callCommand.value = [
+          store.state.available_elevators_stack[
+            store.state.available_elevators_stack.length - 1
+          ],
+          floor,
+        ];
+        store.commit("removeElevator");
+        store.commit("removeFromQueue", floor);
+      } else {
+        id.value = setInterval(() => {
+          console.log(store.getters.getQueueSize);
+          if (store.state.available_elevators_stack.length !== 0) {
+            clearInterval(id.value);
+            const temp = store.state.elevator_call_queue.values().next().value;
+            callCommand.value = [
+              store.state.available_elevators_stack[
+                store.state.available_elevators_stack.length - 1
+              ],
+              temp,
+            ];
+            store.commit("removeElevator");
+            store.commit("removeFromQueue", temp);
+            if (store.getters.getQueueSize !== 0) {
+              callElevator(
+                store.state.elevator_call_queue.values().next().value
+              );
+            }
+          }
+        }, 10);
+      }
+    };
     return {
       elevatorContainerStyle,
       floors,

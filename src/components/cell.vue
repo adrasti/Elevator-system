@@ -1,21 +1,38 @@
 <template>
   <div class="cell">
-    <div @click="handleClick" class="elevator-button"></div>
+    <div
+      @click="handleClick"
+      :class="{ active: activeButton }"
+      class="elevator-button"
+    ></div>
   </div>
 </template>
 
 <script>
-import { watch } from "vue";
+import { watch, ref } from "vue";
+import { useStore } from "vuex";
+
 export default {
   props: ["floor", "elevator"],
   emits: ["callElevator"],
   name: "Cell",
   setup(props, { emit }) {
+    const store = useStore();
+
+    const activeButton = ref(false);
+
     const handleClick = () => {
-      emit("callElevator", props.floor);
+      if (!store.state.active_buttons.has(props.floor))
+        emit("callElevator", props.floor);
     };
 
-    return { handleClick };
+    watch(store.state.active_buttons, () => {
+      if (store.state.active_buttons.has(props.floor)) {
+        activeButton.value = true;
+      } else activeButton.value = false;
+    });
+
+    return { handleClick, activeButton };
   },
 };
 </script>
