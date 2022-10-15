@@ -4,12 +4,14 @@
       @click="handleClick"
       :class="{ active: activeButton }"
       class="elevator-button"
-    ></div>
+    >
+      <div class="floornum">{{ floor }}</div>
+    </div>
   </div>
 </template>
 
 <script>
-import { watch, ref } from "vue";
+import { watch, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 
 export default {
@@ -21,18 +23,26 @@ export default {
 
     const activeButton = ref(false);
 
+    const floor = store.state.floors_number - props.floor + 1;
+
     const handleClick = () => {
-      if (!store.state.active_buttons.has(props.floor))
+      if (!store.state.active_calls.has(props.floor))
         emit("callElevator", props.floor);
     };
 
-    watch(store.state.active_buttons, () => {
-      if (store.state.active_buttons.has(props.floor)) {
+    watch(store.state.active_calls, () => {
+      if (store.state.active_calls.has(props.floor)) {
         activeButton.value = true;
       } else activeButton.value = false;
     });
 
-    return { handleClick, activeButton };
+    onMounted(() => {
+      if (store.state.active_calls.has(props.floor)) {
+        activeButton.value = true;
+      } else activeButton.value = false;
+    });
+
+    return { handleClick, activeButton, floor };
   },
 };
 </script>
@@ -41,6 +51,14 @@ export default {
 .cell {
   position: relative;
   border: solid black 1px;
+  color: rgb(2, 2, 121);
+  .floornum {
+    font-size: 12px;
+    left: 45%;
+    top: 50%;
+    transform: translate(-45%, -50%);
+    position: relative;
+  }
 }
 .elevator-button {
   height: 20px;
@@ -58,17 +76,9 @@ export default {
     &::after {
       background-color: orange;
     }
-  }
-  &:after {
-    content: "";
-    position: absolute;
-    border-radius: 50%;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 35%;
-    height: 35%;
-    background-color: blue;
+    .floornum {
+      color: orange;
+    }
   }
   &:before {
     content: "";
@@ -77,8 +87,8 @@ export default {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 70%;
-    height: 70%;
+    width: 90%;
+    height: 90%;
     border: solid 1px;
     border-color: inherit;
   }

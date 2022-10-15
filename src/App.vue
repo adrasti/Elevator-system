@@ -1,5 +1,5 @@
 <template>
-  <div class="elevator-screen"></div>
+  <div class="elevator-config"></div>
   <div class="elevator-content">
     <div class="elevator-container" :style="elevatorContainerStyle">
       <template v-for="floor in floors" :key="floor">
@@ -43,11 +43,11 @@ export default {
   setup() {
     const store = useStore();
 
-    const floors = ref(4);
-    const elevators = ref(2);
+    const floors = ref();
+    const elevators = ref();
 
-    const floorHeight = ref(160);
-    const elevatorShaftWidth = ref(200);
+    const floorHeight = ref();
+    const elevatorShaftWidth = ref();
 
     const callCommand = ref(null);
 
@@ -75,31 +75,23 @@ export default {
 
     const callElevator = (floor) => {
       store.commit("addToQueue", floor);
-      store.commit("addActiveButton", floor);
+      store.commit("addActiveButton", [floor, undefined]);
       clearInterval(id.value);
 
-      if (store.state.available_elevators_stack.length !== 0) {
-        callCommand.value = [
-          store.state.available_elevators_stack[
-            store.state.available_elevators_stack.length - 1
-          ],
-          floor,
-        ];
-        store.commit("removeElevator");
+      if (store.state.available_elevators.length !== 0) {
+        const k = store.getters.getClosestElevator(floor);
+        callCommand.value = [k[0], floor];
+        store.commit("removeElevator", k[1]);
         store.commit("removeFromQueue", floor);
       } else {
         id.value = setInterval(() => {
-          console.log(store.getters.getQueueSize);
-          if (store.state.available_elevators_stack.length !== 0) {
+          console.log(id.value);
+          if (store.state.available_elevators.length !== 0) {
             clearInterval(id.value);
             const temp = store.state.elevator_call_queue.values().next().value;
-            callCommand.value = [
-              store.state.available_elevators_stack[
-                store.state.available_elevators_stack.length - 1
-              ],
-              temp,
-            ];
-            store.commit("removeElevator");
+            const k = store.getters.getClosestElevator(temp);
+            callCommand.value = [k[0], temp]; //elevator, floor
+            store.commit("removeElevator", k[1]);
             store.commit("removeFromQueue", temp);
             if (store.getters.getQueueSize !== 0) {
               callElevator(
@@ -110,6 +102,33 @@ export default {
         }, 10);
       }
     };
+
+    onMounted(() => {
+      store.commit("init");
+      floors.value = store.state.floors_number - 1;
+      elevators.value = store.state.elevators_number;
+      floorHeight.value = store.state.elevator_floor_height;
+      elevatorShaftWidth.value = store.state.elevator_shaft_width;
+
+      const l = store.state.available_elevators.length;
+
+      for (let [fl, el] of store.state.active_calls) {
+        console.log([el, fl]);
+        if (el !== null) {
+          setTimeout(() => {
+            store.commit("addElevator", el);
+            callCommand.value = [el, fl];
+            store.commit("removeElevator", l);
+          }, 0);
+        }
+      }
+
+      setTimeout(() => {
+        if (store.getters.getQueueSize !== 0) {
+          callElevator(store.state.elevator_call_queue.values().next().value);
+        }
+      }, 0);
+    });
     return {
       elevatorContainerStyle,
       floors,
@@ -138,7 +157,7 @@ export default {
   grid-auto-rows: auto;
 }
 
-.elevator-screen {
+.elevator-config {
   height: 200px;
 }
 </style>
