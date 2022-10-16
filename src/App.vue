@@ -1,5 +1,6 @@
 <template>
-  <div class="elevator-config"></div>
+  <div class="title"><div>Эмулятор лифтовой системы</div></div>
+  <Config></Config>
   <div class="elevator-content">
     <div class="elevator-container" :style="elevatorContainerStyle">
       <template v-for="floor in floors" :key="floor">
@@ -33,12 +34,14 @@ import { useStore } from "vuex";
 import { ref, computed, onMounted, watch } from "vue";
 import Cell from "./components/cell.vue";
 import ElevatorCell from "./components/ElevatorCell.vue";
+import Config from "./components/config.vue";
 
 export default {
   name: "App",
   components: {
     Cell: Cell,
     ElevatorCell: ElevatorCell,
+    Config: Config,
   },
   setup() {
     const store = useStore();
@@ -103,7 +106,27 @@ export default {
       }
     };
 
+    watch(store.state.reset, () => {
+      store.state.currentTimeOuts.forEach((e) => {
+        clearTimeout(e);
+      });
+      store.commit("clearCurrentTimeouts");
+      elevators.value = 0;
+      floors.value = 0;
+      setTimeout(() => {
+        floors.value = store.state.floors_number - 1;
+        elevators.value = store.state.elevators_number;
+        floorHeight.value = store.state.elevator_floor_height;
+        elevatorShaftWidth.value = store.state.elevator_shaft_width;
+      }, 0);
+      clearInterval(id.value);
+    });
+
     onMounted(() => {
+      store.state.currentTimeOuts.forEach((e) => {
+        clearTimeout(e);
+      });
+      store.commit("clearCurrentTimeouts");
       store.commit("init");
       floors.value = store.state.floors_number - 1;
       elevators.value = store.state.elevators_number;
@@ -113,7 +136,6 @@ export default {
       const l = store.state.available_elevators.length;
 
       for (let [fl, el] of store.state.active_calls) {
-        console.log([el, fl]);
         if (el !== null) {
           setTimeout(() => {
             store.commit("addElevator", el);
@@ -129,6 +151,7 @@ export default {
         }
       }, 0);
     });
+
     return {
       elevatorContainerStyle,
       floors,
@@ -142,6 +165,9 @@ export default {
 </script>
 
 <style lang="scss">
+body {
+  min-width: 1024px;
+}
 .elevator-container {
   position: relative;
   display: grid;
@@ -155,9 +181,26 @@ export default {
   display: flex;
   grid-template-columns: 1fr auto 1fr;
   grid-auto-rows: auto;
+  margin-bottom: 50px;
 }
 
 .elevator-config {
-  height: 200px;
+  height: 100px;
+}
+
+.title {
+  text-align: center;
+  margin-top: 50px;
+  font-size: 25px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  div {
+    display: inline-block;
+    margin: auto;
+    padding: 20px 40px;
+    color: #163532;
+    border: solid 5px;
+    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.3),
+      0px -1px 0px rgba(0, 0, 0, 0.7);
+  }
 }
 </style>

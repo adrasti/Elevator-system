@@ -1,10 +1,6 @@
 <template>
-  <div class="cell">
-    <div
-      @click="handleClick"
-      :class="{ active: activeButton }"
-      class="elevator-button"
-    >
+  <div class="cell" @click="handleClick">
+    <div :class="{ active: activeButton }" class="elevator-button">
       <div class="floornum">{{ floor }}</div>
     </div>
     <div :style="elevatorStyle" class="elevator" ref="el">
@@ -12,6 +8,7 @@
         <div class="elevator-direction">{{ currentDirection }}</div>
         <div class="elevator-destination">{{ currentDestination }}</div>
       </div>
+      <div class="flick" :class="{ blink: isBlinking }"></div>
     </div>
   </div>
 </template>
@@ -40,15 +37,26 @@ export default {
     const offset = ref(160);
     const delayMultiplier = ref(1000);
 
+    const isBlinking = ref(false);
+
     const handleClick = () => {
       if (!store.state.active_calls.has(props.floor))
         emit("callElevator", props.floor);
     };
 
     watch(store.state.active_calls, () => {
-      if (store.state.active_calls.has(props.floor)) {
+      if (
+        store.state.active_calls.has(props.floor) &&
+        !store.state.blinking_elevators.has(props.floor)
+      ) {
         activeButton.value = true;
       } else activeButton.value = false;
+    });
+
+    watch(store.state.blinking_elevators, () => {
+      if (store.state.blinking_elevators.has(props.floor)) {
+        activeButton.value = false;
+      }
     });
 
     watch(props, () => {
@@ -80,14 +88,26 @@ export default {
               fill: "forwards",
             }
           );
-          currentFloor.value = Number(call1);
-          setTimeout(() => {
-            currentDestination.value = " ";
-            currentDirection.value = "-";
+          const tout = setTimeout(() => {
+            currentFloor.value = Number(call1);
             store.commit("removeActiveButton", call1);
             store.commit("addElevator", elevator);
             store.commit("changeElevatorState", [elevator, call1]);
+            store.commit("removeCurrentTimeout", tout);
+            isBlinking.value = false;
+            store.commit("removeBlinkingElevator", call1);
+          }, delay + store.state.elevator_rest_duration);
+
+          const tout2 = setTimeout(() => {
+            currentDestination.value = " ";
+            currentDirection.value = "-";
+            isBlinking.value = true;
+            store.commit("addBlinkingElevator", [call1, elevator]);
+            store.commit("removeCurrentTimeout", tout2);
           }, delay);
+
+          store.commit("setCurrentTimeout", tout);
+          store.commit("setCurrentTimeout", tout2);
         } else {
           store.commit("removeActiveButton", props.call[1]);
           store.commit("addElevator", props.elevator);
@@ -104,8 +124,8 @@ export default {
       currentFloor.value = store.state.elevator_states.get(props.elevator);
       el.value.animate(
         [
-          { top: `-${(props.floor - currentFloor.value) * 160}px` },
-          { top: `-${(props.floor - currentFloor.value) * 160}px` },
+          { top: `-${(props.floor - currentFloor.value) * offset.value}px` },
+          { top: `-${(props.floor - currentFloor.value) * offset.value}px` },
         ],
         {
           duration: 0,
@@ -124,6 +144,7 @@ export default {
       floor,
       currentDirection,
       currentDestination,
+      isBlinking,
     };
   },
 };
@@ -170,6 +191,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-evenly;
+  z-index: 1000;
 }
 
 .elevator-destination {
@@ -178,5 +200,22 @@ export default {
 
 .elevator-direction {
   font-weight: 1000;
+}
+
+.flick {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.blink {
+  animation: blinker 1.2s ease-in infinite;
+  background: rgb(217, 150, 150);
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
 }
 </style>

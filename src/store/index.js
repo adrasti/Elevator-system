@@ -2,21 +2,23 @@ import { createStore, storeKey } from "vuex";
 
 export default createStore({
   state: {
+    //static
     elevator_speed_per_floor: 1000,
     elevator_shaft_width: 200,
     elevator_floor_height: 160,
     elevator_rest_duration: 3000,
-    floors_number: 7,
-    elevators_number: 3,
+    floors_number: 5,
+    elevators_number: 1,
 
     elevator_call_queue: new Set(), //floors
     elevator_call_queue_size: 0,
-
     active_calls: new Map(), // floor => elevator
-
-    available_elevators: [],
-
+    available_elevators: [], //elevators
     elevator_states: new Map(), // elevator => floor
+    blinking_elevators: new Map(), // floor => elevator
+
+    reset: [true],
+    currentTimeOuts: new Set(),
   },
   getters: {
     getQueueSize(state) {
@@ -118,6 +120,51 @@ export default createStore({
           JSON.stringify(Array.from(state.elevator_states))
         );
       }
+
+      state.blinking_elevators = new Map();
+    },
+
+    reset(state) {
+      const o = JSON.parse(localStorage.getItem("staticConfig"));
+      state.elevator_speed_per_floor = Number(o.elevator_speed_per_floor);
+      state.elevator_shaft_width = Number(o.elevator_shaft_width);
+      state.elevator_floor_height = Number(o.elevator_floor_height);
+      state.elevator_rest_duration = Number(o.elevator_rest_duration);
+      state.floors_number = Number(o.floors_number);
+      state.elevators_number = Number(o.elevators_number);
+
+      state.available_elevators = [];
+      state.elevator_states.clear();
+      state.active_calls.clear();
+      state.elevator_call_queue.clear();
+      state.elevator_call_queue_size = 0;
+
+      for (let i = 1; i <= state.elevators_number; i++) {
+        state.available_elevators.push(i);
+        state.elevator_states.set(i, state.floors_number);
+      }
+      localStorage.setItem(
+        "elevatorStates",
+        JSON.stringify(Array.from(state.elevator_states))
+      );
+      localStorage.setItem(
+        "availableElevators",
+        JSON.stringify(state.available_elevators)
+      );
+      localStorage.setItem(
+        "queue",
+        JSON.stringify({
+          q: Array.from(state.elevator_call_queue),
+          s: state.elevator_call_queue_size,
+        })
+      );
+      localStorage.setItem(
+        "activeCalls",
+        JSON.stringify(Array.from(state.active_calls))
+      );
+
+      state.reset[0] = !state.reset[0];
+      state.blinking_elevators = new Map();
     },
     //очередь вызовов
     addToQueue(state, item) {
@@ -189,6 +236,30 @@ export default createStore({
         "elevatorStates",
         JSON.stringify(Array.from(state.elevator_states))
       );
+    },
+
+    //мигающие лифты
+
+    addBlinkingElevator(state, [fl, el]) {
+      state.blinking_elevators.set(fl, el);
+    },
+
+    removeBlinkingElevator(state, fl) {
+      state.blinking_elevators.delete(fl);
+    },
+
+    //timeout
+
+    setCurrentTimeout(state, tout) {
+      state.currentTimeOuts.add(tout);
+    },
+
+    removeCurrentTimeout(state, tout) {
+      state.currentTimeOuts.delete(tout);
+    },
+
+    clearCurrentTimeouts(state) {
+      state.currentTimeOuts = new Set();
     },
   },
   actions: {},

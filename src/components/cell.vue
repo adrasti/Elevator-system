@@ -1,10 +1,6 @@
 <template>
-  <div class="cell">
-    <div
-      @click="handleClick"
-      :class="{ active: activeButton }"
-      class="elevator-button"
-    >
+  <div class="cell" @click="handleClick">
+    <div :class="{ active: activeButton }" class="elevator-button">
       <div class="floornum">{{ floor }}</div>
     </div>
   </div>
@@ -31,9 +27,18 @@ export default {
     };
 
     watch(store.state.active_calls, () => {
-      if (store.state.active_calls.has(props.floor)) {
+      if (
+        store.state.active_calls.has(props.floor) &&
+        !store.state.blinking_elevators.has(props.floor)
+      ) {
         activeButton.value = true;
       } else activeButton.value = false;
+    });
+
+    watch(store.state.blinking_elevators, () => {
+      if (store.state.blinking_elevators.has(props.floor)) {
+        activeButton.value = false;
+      }
     });
 
     onMounted(() => {
