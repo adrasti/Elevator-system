@@ -1,9 +1,5 @@
 <template>
-  <div class="cell" @click="handleClick">
-    <div :class="{ active: activeButton }" class="elevator-button">
-      <div class="floornum">{{ floor }}</div>
-    </div>
-  </div>
+  <div class="cell" @click="handleClick"></div>
 </template>
 
 <script>
@@ -11,7 +7,7 @@ import { watch, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 
 export default {
-  props: ["floor", "elevator"],
+  props: ["floor"],
   emits: ["callElevator"],
   name: "Cell",
   setup(props, { emit }) {
@@ -104,5 +100,16 @@ export default {
   left: 50%;
   transform: translate(-50%);
   z-index: -10;
+}
+
+.cell-padding {
+  position: relative;
+  .floornum {
+    font-size: 12px;
+    left: 45%;
+    top: 50%;
+    transform: translate(-45%, -50%);
+    position: relative;
+  }
 }
 </style>

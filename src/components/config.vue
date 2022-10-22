@@ -191,6 +191,7 @@ export default {
 }
 .config {
   position: fixed;
+  font-size: 2vh;
   top: 15%;
   left: 25%;
   width: 50%;
@@ -257,6 +258,7 @@ export default {
     padding: 15px 25px;
     bottom: 10%;
     left: 50%;
+    font-size: 2vh;
     transform: translate(-50%);
     border: solid rgb(91, 233, 91) 3px;
     box-shadow: 0 0 1px 0 rgb(221, 217, 217),
@@ -278,6 +280,7 @@ export default {
     justify-content: center;
     .input-groups {
       flex-basis: 50%;
+      width: 50%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -313,10 +316,27 @@ label {
 
 input {
   margin-top: 5px;
-  width: 200px;
+  width: 90%;
+  font-size: 2vh;
 }
 
 .input-box {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
   margin-top: 10px;
+  width: 100%;
+}
+
+@media (max-width: 820px) {
+  .config .config-content .input-groups {
+    width: 100%;
+  }
+
+  .config .config-content {
+    display: block;
+  }
 }
 </style>

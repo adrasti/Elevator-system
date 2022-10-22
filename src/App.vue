@@ -4,7 +4,7 @@
   <div class="elevator-content">
     <div class="elevator-container" :style="elevatorContainerStyle">
       <template v-for="floor in floors" :key="floor">
-        <div class="cell-padding"></div>
+        <ButtonCell :floor="floor" v-on:callElevator="callElevator" />
         <Cell
           v-for="elevator in elevators"
           :key="elevator"
@@ -14,7 +14,11 @@
         ></Cell>
         <div class="cell-padding"></div>
       </template>
-      <div class="cell-padding"></div>
+      <ButtonCell
+        :floor="floorNum"
+        :key="floorNum"
+        v-on:callElevator="callElevator"
+      />
       <ElevatorCell
         v-for="elevator in elevators"
         :key="elevator"
@@ -35,6 +39,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import Cell from "./components/cell.vue";
 import ElevatorCell from "./components/ElevatorCell.vue";
 import Config from "./components/config.vue";
+import ButtonCell from "./components/ButtonCell.vue";
 
 export default {
   name: "App",
@@ -42,11 +47,12 @@ export default {
     Cell: Cell,
     ElevatorCell: ElevatorCell,
     Config: Config,
+    ButtonCell: ButtonCell,
   },
   setup() {
     const store = useStore();
 
-    const floors = ref();
+    const floors = ref(null);
     const elevators = ref();
 
     const floorHeight = ref();
@@ -88,7 +94,6 @@ export default {
         store.commit("removeFromQueue", floor);
       } else {
         id.value = setInterval(() => {
-          console.log(id.value);
           if (store.state.available_elevators.length !== 0) {
             clearInterval(id.value);
             const temp = store.state.elevator_call_queue.values().next().value;
@@ -105,6 +110,11 @@ export default {
         }, 10);
       }
     };
+
+    const floorNum = computed(() => {
+      const n = floors.value + 1;
+      return n;
+    });
 
     watch(store.state.reset, () => {
       store.state.currentTimeOuts.forEach((e) => {
@@ -159,6 +169,7 @@ export default {
       elevatorStyle,
       callElevator,
       callCommand,
+      floorNum,
     };
   },
 };

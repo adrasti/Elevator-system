@@ -1,8 +1,5 @@
 <template>
   <div class="cell" @click="handleClick">
-    <div :class="{ active: activeButton }" class="elevator-button">
-      <div class="floornum">{{ floor }}</div>
-    </div>
     <div :style="elevatorStyle" class="elevator" ref="el">
       <div class="elevator-screen">
         <div class="elevator-direction">{{ currentDirection }}</div>
